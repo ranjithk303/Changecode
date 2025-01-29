@@ -1,105 +1,113 @@
-# Changecode
-import android.view.LayoutInflater
-import android.view.View
-import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.android.material.tabs.TabLayout
-import org.junit.Assert.*
+import android.content.res.Resources
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mock
 import org.mockito.Mockito.*
+import org.mockito.junit.MockitoJUnitRunner
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(MockitoJUnitRunner::class)
 class MainActivityTest {
 
+    @Mock
+    private lateinit var mockViewModelProvider: ViewModelProvider
+
+    @Mock
+    private lateinit var mockMainActivityViewModel: MainActivityViewModel
+
+    @Mock
+    private lateinit var mockLeftSeatViewModel: LeftSeatViewModel
+
+    @Mock
+    private lateinit var mockRightSeatViewModel: RightSeatViewModel
+
+    @Mock
+    private lateinit var mockMassageLeftSeatViewModel: MassageLeftSeatViewModel
+
+    @Mock
+    private lateinit var mockMassageRightSeatViewModel: MassageRightSeatViewModel
+
+    @Mock
+    private lateinit var mockTestScreenMassageLeftSeatViewModel: TestScreenMassageLeftSeatViewModel
+
+    @Mock
+    private lateinit var mockTestScreenMassageRightSeatViewModel: TestScreenMassageRightSeatViewModel
+
+    @Mock
+    private lateinit var mockMcsTranslator: McsTranslator
+
+    @Mock
+    private lateinit var mockResponseMediator: ResponseMediator
+
+    @Mock
+    private lateinit var mockCanSignalManager: McsCanSignalManager
+
+    @Mock
+    private lateinit var mockCurrentStatusMediator: CurrentStatusMediator
+
+    @Mock
+    private lateinit var mockResources: Resources
+
+    @Mock
+    private lateinit var mockLifecycle: Lifecycle
+
     private lateinit var mainActivity: MainActivity
-    private lateinit var mockInflater: LayoutInflater
-    private lateinit var mockMainLayout: FrameLayout
-    private lateinit var mockSeatsTabView: View
-    private lateinit var mockDisabledSeatsTabView: View
-    private lateinit var mockSeatTabs: TabLayout
-    private lateinit var mockDisabledSeatTabs: TabLayout
-    private lateinit var mockTabLayoutProvider: TabLayoutProvider
 
     @Before
     fun setUp() {
-        mainActivity = spy(MainActivity()) // Use a spy to override specific methods if needed
-        mockInflater = mock(LayoutInflater::class.java)
-        mockMainLayout = mock(FrameLayout::class.java)
-        mockSeatsTabView = mock(View::class.java)
-        mockDisabledSeatsTabView = mock(View::class.java)
-        mockSeatTabs = mock(TabLayout::class.java)
-        mockDisabledSeatTabs = mock(TabLayout::class.java)
-        mockTabLayoutProvider = mock(TabLayoutProvider::class.java)
+        mainActivity = MainActivity()
 
-        // Mock dependencies
-        doReturn(mockInflater).whenever(mainActivity).getSystemService(LayoutInflater::class.java)
-        doReturn(mockMainLayout).whenever(mainActivity).findViewById<FrameLayout>(R.id.frame_holder)
+        // Mock ViewModelProvider behavior
+        `when`(mockViewModelProvider.get(MainActivityViewModel::class.java)).thenReturn(mockMainActivityViewModel)
+        `when`(mockViewModelProvider.get(LeftSeatViewModel::class.java)).thenReturn(mockLeftSeatViewModel)
+        `when`(mockViewModelProvider.get(RightSeatViewModel::class.java)).thenReturn(mockRightSeatViewModel)
+        `when`(mockViewModelProvider.get(MassageLeftSeatViewModel::class.java)).thenReturn(mockMassageLeftSeatViewModel)
+        `when`(mockViewModelProvider.get(MassageRightSeatViewModel::class.java)).thenReturn(mockMassageRightSeatViewModel)
+        `when`(mockViewModelProvider.get(TestScreenMassageLeftSeatViewModel::class.java)).thenReturn(mockTestScreenMassageLeftSeatViewModel)
+        `when`(mockViewModelProvider.get(TestScreenMassageRightSeatViewModel::class.java)).thenReturn(mockTestScreenMassageRightSeatViewModel)
+        `when`(mockViewModelProvider.get(McsTranslator::class.java)).thenReturn(mockMcsTranslator)
+        `when`(mockViewModelProvider.get(ResponseMediator::class.java)).thenReturn(mockResponseMediator)
 
-        // Mock inflated views
-        whenever(mockInflater.inflate(eq(R.layout.seats), eq(mockMainLayout), eq(false))).thenReturn(mockSeatsTabView)
-        whenever(mockInflater.inflate(eq(R.layout.seats_fnv4), eq(mockMainLayout), eq(false))).thenReturn(mockDisabledSeatsTabView)
+        // Mock Resource Strings
+        `when`(mockResources.getString(R.string.massage_off_toast)).thenReturn("Massage Off")
+        `when`(mockResources.getString(R.string.no_passenger_detected_text)).thenReturn("No Passenger Detected")
 
-        // Mock TabLayout
-        whenever(mockSeatsTabView.findViewById<TabLayout>(R.id.tab_layout_default)).thenReturn(mockSeatTabs)
-        whenever(mockDisabledSeatsTabView.findViewById<TabLayout>(R.id.tab_layout_default)).thenReturn(mockDisabledSeatTabs)
-
-        // Mock TabLayoutProvider
-        doReturn(mock(TabLayoutProvider.ToolbarLayout::class.java)).whenever(mockTabLayoutProvider).getToolbarLayout(mainActivity)
-
-        mainActivity.tabLayoutProvider = mockTabLayoutProvider
+        mainActivity.resources = mockResources
+        mainActivity.lifecycle = mockLifecycle
     }
 
     @Test
-    fun `test createSeatTabs inflates correct layouts and sets up tabs`() {
-        // Arrange
-        val leftSeatName = "Left Seat"
-        val rightSeatName = "Right Seat"
-        mainActivity.isFnv4 = false
+    fun `test initialSetup with normal mode`() {
+        mainActivity.isTestingModeEnabled = false
 
-        // Act
-        mainActivity.createSeatTabs(leftSeatName, rightSeatName)
+        mainActivity.initialSetup()
 
-        // Assert
-        // Verify correct layout inflation
-        verify(mockInflater).inflate(R.layout.seats, mockMainLayout, false)
-        verify(mockInflater).inflate(R.layout.seats, mockMainLayout, false)
+        // Verify ViewModel assignments
+        verify(mockViewModelProvider).get(MainActivityViewModel::class.java)
+        verify(mockViewModelProvider).get(LeftSeatViewModel::class.java)
+        verify(mockViewModelProvider).get(RightSeatViewModel::class.java)
+        verify(mockViewModelProvider).get(MassageLeftSeatViewModel::class.java)
+        verify(mockViewModelProvider).get(MassageRightSeatViewModel::class.java)
 
-        // Verify tab list is set up
-        val iconTabListCaptor = argumentCaptor<ArrayList<TabLayout.Tab>>()
-        verify(mockSeatTabs).setTabList(iconTabListCaptor.capture())
-        val capturedTabs = iconTabListCaptor.firstValue
-        assertEquals(2, capturedTabs.size)
-        assertEquals(leftSeatName, capturedTabs[0].text)
-        assertEquals(rightSeatName, capturedTabs[1].text)
-
-        // Verify disabled tabs setup
-        verify(mockDisabledSeatTabs).setTabList(iconTabListCaptor.capture())
-        assertEquals(2, iconTabListCaptor.firstValue.size)
+        // Verify correct translator and mediator setup
+        verify(mockMcsTranslator).setSignalManager(any())
+        verify(mockResponseMediator).setDriverLocation(any())
     }
 
     @Test
-    fun `test createSeatTabs sets passenger tab click listener`() {
-        // Arrange
-        val leftSeatName = "Left Seat"
-        val rightSeatName = "Right Seat"
-        mainActivity.isFnv4 = false
-        val passengerPosition = 1
-        val mockTabView = mock(View::class.java)
-        val mockTextView = mock(TextView::class.java)
-        whenever(mockDisabledSeatTabs.getChildAt(passengerPosition)).thenReturn(mockTabView)
-        doReturn(mockTextView).whenever(mainActivity).requireViewByRefId<TextView>(mockTabView, R.id.tab_text)
+    fun `test initialSetup with testing mode`() {
+        mainActivity.isTestingModeEnabled = true
 
-        // Act
-        mainActivity.createSeatTabs(leftSeatName, rightSeatName)
+        mainActivity.initialSetup()
 
-        // Assert
-        // Verify passenger tab click listener
-        verify(mockTabView).setOnClickListener(any())
-        // Verify textView alpha is set
-        verify(mockTextView).alpha = 0.5f
+        // Verify ViewModel assignments for testing mode
+        verify(mockViewModelProvider).get(TestScreenMassageLeftSeatViewModel::class.java)
+        verify(mockViewModelProvider).get(TestScreenMassageRightSeatViewModel::class.java)
+
+        // Verify mediator and translator setup
+        verify(mockMcsTranslator).setSignalManager(any())
+        verify(mockResponseMediator).setDriverLocation(any())
     }
 }
