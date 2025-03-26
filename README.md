@@ -1,113 +1,75 @@
-import android.content.res.Resources
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ViewModelProvider
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.mockito.Mock
-import org.mockito.Mockito.*
-import org.mockito.junit.MockitoJUnitRunner
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
-@RunWith(MockitoJUnitRunner::class)
-class MainActivityTest {
+import android.content.Context;
+import android.content.res.Resources;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
 
-    @Mock
-    private lateinit var mockViewModelProvider: ViewModelProvider
+@RunWith(MockitoJUnitRunner.class)
+public class YourClassTest {
 
-    @Mock
-    private lateinit var mockMainActivityViewModel: MainActivityViewModel
+    @Mock Context mContext;  // Mocked Context
+    @Mock Resources resources;  // Mocked Resources
+    @Mock InfoBookRadioButtonPreference mockListItem;  // Mocked Preference Object
 
-    @Mock
-    private lateinit var mockLeftSeatViewModel: LeftSeatViewModel
+    @InjectMocks YourClass yourClass;  // The class containing createListItem()
 
-    @Mock
-    private lateinit var mockRightSeatViewModel: RightSeatViewModel
-
-    @Mock
-    private lateinit var mockMassageLeftSeatViewModel: MassageLeftSeatViewModel
-
-    @Mock
-    private lateinit var mockMassageRightSeatViewModel: MassageRightSeatViewModel
-
-    @Mock
-    private lateinit var mockTestScreenMassageLeftSeatViewModel: TestScreenMassageLeftSeatViewModel
-
-    @Mock
-    private lateinit var mockTestScreenMassageRightSeatViewModel: TestScreenMassageRightSeatViewModel
-
-    @Mock
-    private lateinit var mockMcsTranslator: McsTranslator
-
-    @Mock
-    private lateinit var mockResponseMediator: ResponseMediator
-
-    @Mock
-    private lateinit var mockCanSignalManager: McsCanSignalManager
-
-    @Mock
-    private lateinit var mockCurrentStatusMediator: CurrentStatusMediator
-
-    @Mock
-    private lateinit var mockResources: Resources
-
-    @Mock
-    private lateinit var mockLifecycle: Lifecycle
-
-    private lateinit var mainActivity: MainActivity
+    private static final int POWER = 1;
+    private static final int MANUAL = 2;
 
     @Before
-    fun setUp() {
-        mainActivity = MainActivity()
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
 
-        // Mock ViewModelProvider behavior
-        `when`(mockViewModelProvider.get(MainActivityViewModel::class.java)).thenReturn(mockMainActivityViewModel)
-        `when`(mockViewModelProvider.get(LeftSeatViewModel::class.java)).thenReturn(mockLeftSeatViewModel)
-        `when`(mockViewModelProvider.get(RightSeatViewModel::class.java)).thenReturn(mockRightSeatViewModel)
-        `when`(mockViewModelProvider.get(MassageLeftSeatViewModel::class.java)).thenReturn(mockMassageLeftSeatViewModel)
-        `when`(mockViewModelProvider.get(MassageRightSeatViewModel::class.java)).thenReturn(mockMassageRightSeatViewModel)
-        `when`(mockViewModelProvider.get(TestScreenMassageLeftSeatViewModel::class.java)).thenReturn(mockTestScreenMassageLeftSeatViewModel)
-        `when`(mockViewModelProvider.get(TestScreenMassageRightSeatViewModel::class.java)).thenReturn(mockTestScreenMassageRightSeatViewModel)
-        `when`(mockViewModelProvider.get(McsTranslator::class.java)).thenReturn(mockMcsTranslator)
-        `when`(mockViewModelProvider.get(ResponseMediator::class.java)).thenReturn(mockResponseMediator)
+        // Mock Context's getResources()
+        when(mContext.getResources()).thenReturn(resources);
 
-        // Mock Resource Strings
-        `when`(mockResources.getString(R.string.massage_off_toast)).thenReturn("Massage Off")
-        `when`(mockResources.getString(R.string.no_passenger_detected_text)).thenReturn("No Passenger Detected")
+        // Mock String Resources
+        when(mContext.getString(R.string.power_splitgate_power_title)).thenReturn("Power Title");
+        when(mContext.getString(R.string.power_splitgate_manual_title)).thenReturn("Manual Title");
 
-        mainActivity.resources = mockResources
-        mainActivity.lifecycle = mockLifecycle
+        when(resources.getString(R.string.power_splitgate_power_title)).thenReturn("Power InfoBook Title");
+        when(resources.getString(R.string.power_splitgate_power_infobook_body)).thenReturn("Power InfoBook Body");
+
+        when(resources.getString(R.string.power_splitgate_manual_title)).thenReturn("Manual InfoBook Title");
+        when(resources.getString(R.string.power_splitgate_manual_infobook_body)).thenReturn("Manual InfoBook Body");
+
+        // Mock `InfoBookRadioButtonPreference` constructor
+        whenNew(InfoBookRadioButtonPreference.class).withArguments(mContext).thenReturn(mockListItem);
     }
 
     @Test
-    fun `test initialSetup with normal mode`() {
-        mainActivity.isTestingModeEnabled = false
+    public void testCreateListItem_Power() {
+        when(mockListItem.getKey()).thenReturn("1");
+        when(mockListItem.getTitle()).thenReturn("Power Title");
+        when(mockListItem.getInfoBookTitle()).thenReturn("Power InfoBook Title");
+        when(mockListItem.getInfoBookBody()).thenReturn("Power InfoBook Body");
 
-        mainActivity.initialSetup()
+        InfoBookRadioButtonPreference listItem = yourClass.createListItem(POWER);
 
-        // Verify ViewModel assignments
-        verify(mockViewModelProvider).get(MainActivityViewModel::class.java)
-        verify(mockViewModelProvider).get(LeftSeatViewModel::class.java)
-        verify(mockViewModelProvider).get(RightSeatViewModel::class.java)
-        verify(mockViewModelProvider).get(MassageLeftSeatViewModel::class.java)
-        verify(mockViewModelProvider).get(MassageRightSeatViewModel::class.java)
-
-        // Verify correct translator and mediator setup
-        verify(mockMcsTranslator).setSignalManager(any())
-        verify(mockResponseMediator).setDriverLocation(any())
+        assertNotNull(listItem);
+        assertEquals("1", listItem.getKey());
+        assertEquals("Power Title", listItem.getTitle());
+        assertEquals("Power InfoBook Title", listItem.getInfoBookTitle());
+        assertEquals("Power InfoBook Body", listItem.getInfoBookBody());
     }
 
     @Test
-    fun `test initialSetup with testing mode`() {
-        mainActivity.isTestingModeEnabled = true
+    public void testCreateListItem_Manual() {
+        when(mockListItem.getKey()).thenReturn("2");
+        when(mockListItem.getTitle()).thenReturn("Manual Title");
+        when(mockListItem.getInfoBookTitle()).thenReturn("Manual InfoBook Title");
+        when(mockListItem.getInfoBookBody()).thenReturn("Manual InfoBook Body");
 
-        mainActivity.initialSetup()
+        InfoBookRadioButtonPreference listItem = yourClass.createListItem(MANUAL);
 
-        // Verify ViewModel assignments for testing mode
-        verify(mockViewModelProvider).get(TestScreenMassageLeftSeatViewModel::class.java)
-        verify(mockViewModelProvider).get(TestScreenMassageRightSeatViewModel::class.java)
-
-        // Verify mediator and translator setup
-        verify(mockMcsTranslator).setSignalManager(any())
-        verify(mockResponseMediator).setDriverLocation(any())
+        assertNotNull(listItem);
+        assertEquals("2", listItem.getKey());
+        assertEquals("Manual Title", listItem.getTitle());
+        assertEquals("Manual InfoBook Title", listItem.getInfoBookTitle());
+        assertEquals("Manual InfoBook Body", listItem.getInfoBookBody());
     }
 }
